@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.7" />
+    <PackageReference Include="MySqlConnector" Version="2.3.7" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DatabaseAdapter.Domain\DatabaseAdapter.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
