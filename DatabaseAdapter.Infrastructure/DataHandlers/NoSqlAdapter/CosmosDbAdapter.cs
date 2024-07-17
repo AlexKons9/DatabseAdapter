@@ -4,18 +4,26 @@ namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
 {
     public class CosmosDbAdapter
     {
-        private readonly Database _database;
+        public Database? Database { get; private set; }
+        public CosmosClient? Client { get; private set; }
 
-        public CosmosDbAdapter(string connectionString, string databaseName)
+
+        private CosmosDbAdapter() { }
+
+        public static CosmosDbAdapter Create()
         {
-            var client = new CosmosClient(connectionString);
-            _database = client.GetDatabase(databaseName);
-
+            return new CosmosDbAdapter(); 
         }
 
-        public Database GetDatabase()
+        public void SetConnectionString (string connectionString)
         {
-            return _database;
+            Client = new CosmosClient(connectionString);
         }
+
+        public Database SetDatabase(string databaseName)
+        {
+            return Database = Client.GetDatabase(databaseName); ;
+        }
+
     }
 }

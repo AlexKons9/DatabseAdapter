@@ -18,23 +18,23 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
     {
         private readonly DbConnection _connection;
         private DbTransaction? _transaction;
-        private readonly DatabaseType _databaseType;
+        private readonly SqlDatabaseType _databaseType;
 
-        public DapperAdapter(string connectionString, DatabaseType databaseType)
+        public DapperAdapter(string connectionString, SqlDatabaseType databaseType)
         {
             _databaseType = databaseType;
             _connection = CreateDbConnection(databaseType, connectionString);
         }
 
-        private static DbConnection CreateDbConnection(DatabaseType databaseType, string connectionString)
+        private static DbConnection CreateDbConnection(SqlDatabaseType databaseType, string connectionString)
         {
             return databaseType switch
             {
-                DatabaseType.SqlServer => new SqlConnection(connectionString),
-                DatabaseType.MySql => new MySqlConnection(connectionString),
-                DatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
-                DatabaseType.SQLite => new SqliteConnection(connectionString),
-                DatabaseType.Oracle => new OracleConnection(connectionString),
+                SqlDatabaseType.SqlServer => new SqlConnection(connectionString),
+                SqlDatabaseType.MySql => new MySqlConnection(connectionString),
+                SqlDatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
+                SqlDatabaseType.SQLite => new SqliteConnection(connectionString),
+                SqlDatabaseType.Oracle => new OracleConnection(connectionString),
                 _ => throw new NotSupportedException($"Database type {databaseType} is not supported.")
             };
         }

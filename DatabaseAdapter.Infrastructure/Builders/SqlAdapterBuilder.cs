@@ -4,34 +4,34 @@ using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
 
 namespace DatabaseAdapter.Infrastructure.Factories
 {
-    public class SqlAdapterFactory 
+    public class SqlAdapterBuilder 
     {
         private string? _connectionString;
-        private DatabaseType _databaseType;
+        private SqlDatabaseType _databaseType;
         private DataServiceHandlerType _dataServiceHandlerType;
         private ISqlAdapter? _dataAdapter;
 
-        private readonly Dictionary<(DatabaseType, DataServiceHandlerType), Type> AdapterTypeMappings = new()
+        private readonly Dictionary<(SqlDatabaseType, DataServiceHandlerType), Type> AdapterTypeMappings = new()
         {
             // SQL Server
-            {(DatabaseType.SqlServer, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.SqlServer, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(SqlDatabaseType.SqlServer, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
+            {(SqlDatabaseType.SqlServer, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
 
             // MySQL
-            {(DatabaseType.MySql, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.MySql, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(SqlDatabaseType.MySql, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
+            {(SqlDatabaseType.MySql, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
 
             // PostgreSQL
-            {(DatabaseType.PostgreSql, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.PostgreSql, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(SqlDatabaseType.PostgreSql, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
+            {(SqlDatabaseType.PostgreSql, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
 
             // SQLite
-            {(DatabaseType.SQLite, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.SQLite, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(SqlDatabaseType.SQLite, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
+            {(SqlDatabaseType.SQLite, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
 
             // Oracle
-            {(DatabaseType.Oracle, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.Oracle, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(SqlDatabaseType.Oracle, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
+            {(SqlDatabaseType.Oracle, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
         };
 
         public void SetConnectionString(string connectionString)
@@ -39,7 +39,7 @@ namespace DatabaseAdapter.Infrastructure.Factories
             _connectionString = connectionString;
         }
 
-        public void SetDatabaseType(DatabaseType databaseType)
+        public void SetDatabaseType(SqlDatabaseType databaseType)
         {
             _databaseType = databaseType;
         }

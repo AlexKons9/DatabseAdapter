@@ -5,17 +5,24 @@ namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
 {
     public class MongoDbAdapter
     {
-        private readonly IMongoDatabase _database;
+        public IMongoDatabase? Database { get; private set; }
+        public MongoClient? MongoClient { get; private set; }
 
-        public MongoDbAdapter(string connectionString, string databaseName)
+        private MongoDbAdapter() { }
+
+        public static MongoDbAdapter Create()
         {
-            var client = new MongoClient(connectionString);
-            _database = client.GetDatabase(databaseName);
+            return new MongoDbAdapter(); 
         }
 
-        public IMongoDatabase GetDatabase()
+        public void SetConnectionString(string connectionString)
         {
-            return _database;
+            MongoClient = new MongoClient(connectionString);
+        }
+
+        public void SetDatabase(string databaseName)
+        {
+            Database = MongoClient.GetDatabase(databaseName);
         }
     }
 }
