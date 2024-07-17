@@ -1,8 +1,5 @@
 ﻿using DatabaseAdapter.DataHandlers.NoSqlAdapter;
-using DatabaseAdapter.Domain.Enums;
 using DatabaseAdapter.Interfaces.Builders;
-using DatabaseAdapter.Interfaces.NoSqlAdapter;
-using Microsoft.Azure.Cosmos;
 
 
 namespace DatabaseAdapter.Infrastructure.Factories
