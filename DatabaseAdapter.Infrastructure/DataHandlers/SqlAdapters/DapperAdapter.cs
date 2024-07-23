@@ -18,75 +18,93 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
     {
         private readonly DbConnection _connection;
         private DbTransaction? _transaction;
-        private readonly SqlDatabaseType _databaseType;
+        private readonly DatabaseType _databaseType;
 
-        public DapperAdapter(string connectionString, SqlDatabaseType databaseType)
+        public DapperAdapter(string connectionString, DatabaseType databaseType)
         {
             _databaseType = databaseType;
             _connection = CreateDbConnection(databaseType, connectionString);
         }
 
-        private static DbConnection CreateDbConnection(SqlDatabaseType databaseType, string connectionString)
+        #region private methods
+
+        private static DbConnection CreateDbConnection(DatabaseType databaseType, string connectionString)
         {
             return databaseType switch
             {
-                SqlDatabaseType.SqlServer => new SqlConnection(connectionString),
-                SqlDatabaseType.MySql => new MySqlConnection(connectionString),
-                SqlDatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
-                SqlDatabaseType.SQLite => new SqliteConnection(connectionString),
-                SqlDatabaseType.Oracle => new OracleConnection(connectionString),
+                DatabaseType.SqlServer => new SqlConnection(connectionString),
+                DatabaseType.MySql => new MySqlConnection(connectionString),
+                DatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
+                DatabaseType.SQLite => new SqliteConnection(connectionString),
+                DatabaseType.Oracle => new OracleConnection(connectionString),
                 _ => throw new NotSupportedException($"Database type {databaseType} is not supported.")
             };
         }
 
-        public async Task SaveAsync<Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
-        {
-            if (_transaction == null)
-            {
-                await _connection.OpenAsync(cancellationToken);
-                await _connection.ExecuteAsync(query, parameters, commandType: commandType);
-                await _connection.CloseAsync();
-            }
-            else
-            {
-                await _connection.ExecuteAsync(query, parameters, _transaction, commandType: commandType);
-            }
-        }
+        #endregion
 
-        public async Task<IEnumerable<Tout>> FindAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
+        #region public methods
+
+        public async Task<IEnumerable<Tout>> FindAsync<Tout, Tin>(string query,
+                                                                  Tin parameters,
+                                                                  CommandType commandType,
+                                                                  CancellationToken cancellationToken = default)
         {
-            if (_transaction == null)
+            if (_transaction is null)
             {
                 await _connection.OpenAsync(cancellationToken);
                 var result = await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
                 await _connection.CloseAsync();
                 return result;
             }
-            else
-            {
-                return await _connection.QueryAsync<Tout>(query, parameters, _transaction, commandType: commandType);
-            }
+            return await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
         }
 
-        public async Task<Tout?> FindOneAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
+        public async Task<Tout?> FindOneAsync<Tout, Tin>(string query,
+                                                         Tin parameters,
+                                                         CommandType commandType,
+                                                         CancellationToken cancellationToken = default)
         {
-            if (_transaction == null)
+            if (_transaction is null) 
             {
                 await _connection.OpenAsync(cancellationToken);
                 var result = await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
                 await _connection.CloseAsync();
                 return result;
             }
-            else
-            {
-                return await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, _transaction, commandType: commandType);
-            }
+            return await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
         }
 
-        public async Task<Tout?> FindOneAndSaveAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Tout>> SaveAndFindAsync<Tout, Tin>(string query,
+                                                                 Tin parameters,
+                                                                 CommandType commandType,
+                                                                 CancellationToken cancellationToken = default)
+        {
+            IEnumerable<Tout> result;
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync(cancellationToken);
+                await _connection.ExecuteAsync(query, parameters, commandType: commandType);
+                result = await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
+                await _connection.CloseAsync();
+            }
+            else
+            {
+                await _connection.ExecuteAsync(query, parameters, _transaction, commandType: commandType);
+                result = await _connection.QueryAsync<Tout>(query, parameters, _transaction, commandType: commandType);
+            }
+            return result;
+        }
+
+
+        public async Task<Tout?> SaveAndFindOneAsync<Tout, Tin>(string query,
+                                                                Tin parameters,
+                                                                CommandType commandType,
+                                                                CancellationToken cancellationToken = default)
         {
             Tout? result;
-            if (_transaction == null)
+            if (_transaction is null)
             {
                 await _connection.OpenAsync(cancellationToken);
                 result = await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
@@ -101,7 +119,24 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             return result;
         }
 
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken)
+        public async Task SaveAsync<Tin>(string query,
+                                         Tin parameters,
+                                         CommandType commandType,
+                                         CancellationToken cancellationToken = default)
+        {
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync(cancellationToken);
+                await _connection.ExecuteAsync(query, parameters, commandType: commandType);
+                await _connection.CloseAsync();
+            }
+            else
+            {
+                await _connection.ExecuteAsync(query, parameters, _transaction, commandType: commandType);
+            }
+        }
+
+        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             if (_connection.State == ConnectionState.Closed)
             {
@@ -111,9 +146,9 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             _transaction = await _connection.BeginTransactionAsync(cancellationToken);
         }
 
-        public async Task CommitTransactionAsync(CancellationToken cancellationToken)
+        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
         {
-            if (_transaction != null)
+            if (_transaction is not null)
             {
                 await _transaction.CommitAsync(cancellationToken);
                 await _connection.CloseAsync();
@@ -121,15 +156,17 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             }
         }
 
-        public async Task RollbackTransactionAsync(CancellationToken cancellationToken)
+        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
         {
-            if (_transaction != null)
+            if (_transaction is not null)
             {
                 await _transaction.RollbackAsync(cancellationToken);
                 await _connection.CloseAsync();
                 _transaction = null;
             }
         }
+
+        #endregion
     }
 }
 

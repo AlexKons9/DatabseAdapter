@@ -5,7 +5,6 @@ namespace DatabaseAdapter.Domain.Enums
     {
         AdoNet,
         Dapper,
-        EntityFramework,
         MongoDb,
         CosmosDb
     }

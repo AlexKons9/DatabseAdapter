@@ -1,7 +1,7 @@
 ﻿
 namespace DatabaseAdapter.Domain.Enums
 {
-    public enum SqlDatabaseType
+    public enum DatabaseType
     {
         SqlServer,
         MySql,

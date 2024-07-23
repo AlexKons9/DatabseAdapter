@@ -15,180 +15,34 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
     {
         private readonly DbConnection _connection;
         private DbTransaction? _transaction;
-        private readonly SqlDatabaseType _databaseType;
+        private readonly DatabaseType _databaseType;
 
-        public AdoNetAdapter(string connectionString, SqlDatabaseType databaseType)
+        public AdoNetAdapter(string connectionString, DatabaseType databaseType)
         {
             _databaseType = databaseType;
             _connection = CreateDbConnection(connectionString);
         }
 
+        #region private methods
+
         private DbConnection CreateDbConnection(string connectionString)
         {
             return _databaseType switch
             {
-                SqlDatabaseType.SqlServer => new SqlConnection(connectionString),
-                SqlDatabaseType.MySql => new MySqlConnection(connectionString),
-                SqlDatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
-                SqlDatabaseType.SQLite => new SqliteConnection(connectionString),
-                SqlDatabaseType.Oracle => new OracleConnection(connectionString),
+                DatabaseType.SqlServer => new SqlConnection(connectionString),
+                DatabaseType.MySql => new MySqlConnection(connectionString),
+                DatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
+                DatabaseType.SQLite => new SqliteConnection(connectionString),
+                DatabaseType.Oracle => new OracleConnection(connectionString),
                 _ => throw new NotSupportedException($"Database type {_databaseType} is not supported.")
             };
         }
 
-        public async Task SaveAsync<Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
-        {
-            using var command = _connection.CreateCommand();
-            command.CommandText = query;
-            command.CommandType = commandType;
-            command.Transaction = _transaction;
-            AddParameters(command, parameters);
-
-            if (_transaction == null)
-            {
-                await _connection.OpenAsync();
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                await _connection.CloseAsync();
-            }
-            else
-            {
-                await command.ExecuteNonQueryAsync(cancellationToken);
-            }
-        }
-
-        public async Task<IEnumerable<Tout>> FindAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
-        {
-            var result = new List<Tout>();
-
-            using var command = _connection.CreateCommand();
-            command.CommandText = query;
-            command.CommandType = commandType;
-            command.Transaction = _transaction;
-            AddParameters(command, parameters);
-
-            if (_transaction == null)
-            {
-                await _connection.OpenAsync();
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                while (await reader.ReadAsync())
-                {
-                    result.Add(MapReaderToEntity<Tout>(reader));
-                }
-                await _connection.CloseAsync();
-            }
-            else
-            {
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                while (await reader.ReadAsync())
-                {
-                    result.Add(MapReaderToEntity<Tout>(reader));
-                }
-            }
-
-            return result;
-        }
-
-        public async Task<Tout?> FindOneAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
-        {
-            using var command = _connection.CreateCommand();
-            command.CommandText = query;
-            command.CommandType = commandType;
-            command.Transaction = _transaction;
-            AddParameters(command, parameters);
-
-            if (_transaction == null)
-            {
-                await _connection.OpenAsync();
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                await _connection.CloseAsync();
-                return result;
-            }
-            else
-            {
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                return result;
-            }
-        }
-
-        public async Task<Tout?> FindOneAndSaveAsync<Tout, Tin>(string query, Tin parameters, CommandType commandType, CancellationToken cancellationToken)
-        {
-            using var command = _connection.CreateCommand();
-            command.CommandText = query;
-            command.CommandType = commandType;
-            command.Transaction = _transaction;
-            AddParameters(command, parameters);
-
-            if (_transaction == null)
-            {
-                await _connection.OpenAsync();
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                await _connection.CloseAsync();
-                return result;
-            }
-            else
-            {
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                return result;
-            }
-        }
-
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken)
-        {
-            if (_connection.State == ConnectionState.Closed)
-            {
-                await _connection.OpenAsync(cancellationToken);
-            }
-
-            _transaction = await _connection.BeginTransactionAsync(cancellationToken);
-        }
-
-        public async Task CommitTransactionAsync(CancellationToken cancellationToken)
-        {
-            if (_transaction != null)
-            {
-                await _transaction.CommitAsync(cancellationToken);
-                await _connection.CloseAsync();
-                _transaction = null;
-            }
-        }
-
-        public async Task RollbackTransactionAsync(CancellationToken cancellationToken)
-        {
-            if (_transaction != null)
-            {
-                await _transaction.RollbackAsync(cancellationToken);
-                await _connection.CloseAsync();
-                _transaction = null;
-            }
-        }
-
-        private void AddParameters<T>(DbCommand command, T parameters)
+        private void AddParameters<Tin>(DbCommand command, Tin parameters)
         {
             if (parameters == null) return;
 
-            var properties = typeof(T).GetProperties();
+            var properties = parameters.GetType().GetProperties();
             foreach (var property in properties)
             {
                 var parameter = command.CreateParameter();
@@ -217,5 +71,211 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
 
             return entity;
         }
+
+        #endregion
+
+        #region public methods
+
+        public async Task<IEnumerable<Tout>> FindAsync<Tout, Tin>(string query,
+                                                                  Tin parameters,
+                                                                  CommandType commandType,
+                                                                  CancellationToken cancellationToken = default)
+        {
+            var result = new List<Tout>();
+
+            using var command = _connection.CreateCommand();
+            command.CommandText = query;
+            command.CommandType = commandType;
+            command.Transaction = _transaction;
+            AddParameters(command, parameters);
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync())
+                {
+                    result.Add(MapReaderToEntity<Tout>(reader));
+                }
+                await _connection.CloseAsync();
+            }
+            else
+            {
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync())
+                {
+                    result.Add(MapReaderToEntity<Tout>(reader));
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<Tout?> FindOneAsync<Tout, Tin>(string query,
+                                                         Tin parameters,
+                                                         CommandType commandType,
+                                                         CancellationToken cancellationToken = default)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = query;
+            command.CommandType = commandType;
+            command.Transaction = _transaction;
+            AddParameters(command, parameters);
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                Tout? result = default;
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    result = MapReaderToEntity<Tout>(reader);
+                }
+                await _connection.CloseAsync();
+                return result;
+            }
+            else
+            {
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                Tout? result = default;
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    result = MapReaderToEntity<Tout>(reader);
+                }
+                return result;
+            }
+        }
+
+        public async Task<IEnumerable<Tout>> SaveAndFindAsync<Tout, Tin>(string query,
+                                                                 Tin parameters,
+                                                                 CommandType commandType,
+                                                                 CancellationToken cancellationToken = default)
+        {
+            var result = new List<Tout>();
+
+            using var command = _connection.CreateCommand();
+            command.CommandText = query;
+            command.CommandType = commandType;
+            command.Transaction = _transaction;
+            AddParameters(command, parameters);
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync(cancellationToken);
+                await command.ExecuteNonQueryAsync(cancellationToken);
+
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    result.Add(MapReaderToEntity<Tout>(reader));
+                }
+                await _connection.CloseAsync();
+            }
+            else
+            {
+                await command.ExecuteNonQueryAsync(cancellationToken);
+
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    result.Add(MapReaderToEntity<Tout>(reader));
+                }
+            }
+
+            return result;
+        }
+
+
+        public async Task<Tout?> SaveAndFindOneAsync<Tout, Tin>(string query,
+                                                                Tin parameters,
+                                                                CommandType commandType,
+                                                                CancellationToken cancellationToken = default)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = query;
+            command.CommandType = commandType;
+            command.Transaction = _transaction;
+            AddParameters(command, parameters);
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                Tout? result = default;
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    result = MapReaderToEntity<Tout>(reader);
+                }
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await _connection.CloseAsync();
+                return result;
+            }
+            else
+            {
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                Tout? result = default;
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    result = MapReaderToEntity<Tout>(reader);
+                }
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                return result;
+            }
+        }
+
+        public async Task SaveAsync<Tin>(string query,
+                                         Tin parameters,
+                                         CommandType commandType,
+                                         CancellationToken cancellationToken = default)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = query;
+            command.CommandType = commandType;
+            command.Transaction = _transaction;
+            AddParameters<Tin>(command, parameters);
+
+            if (_transaction is null)
+            {
+                await _connection.OpenAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await _connection.CloseAsync();
+            }
+            else
+            {
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+
+        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_connection.State == ConnectionState.Closed)
+            {
+                await _connection.OpenAsync(cancellationToken);
+            }
+
+            _transaction = await _connection.BeginTransactionAsync(cancellationToken);
+        }
+
+        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_transaction is not null)
+            {
+                await _transaction.CommitAsync(cancellationToken);
+                await _connection.CloseAsync();
+                _transaction = null;
+            }
+        }
+
+        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_transaction is not null)
+            {
+                await _transaction.RollbackAsync(cancellationToken);
+                await _connection.CloseAsync();
+                _transaction = null;
+            }
+        }
+
+        #endregion
     }
 }
