@@ -8,6 +8,8 @@ using Npgsql;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlTypes;
+using System.Xml.Serialization;
 
 namespace DatabaseAdapter.DataHandlers.SqlAdapters
 {
@@ -38,7 +40,7 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             };
         }
 
-        private void AddParameters<Tin>(DbCommand command, Tin parameters)
+        private static void AddParameters<Tin>(DbCommand command, Tin parameters)
         {
             if (parameters == null) return;
 
@@ -47,12 +49,72 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             {
                 var parameter = command.CreateParameter();
                 parameter.ParameterName = $"@{property.Name}";
-                parameter.Value = property.GetValue(parameters) ?? DBNull.Value;
+                var value = property.GetValue(parameters) ?? DBNull.Value;
+                parameter.DbType = GetDbType(property.PropertyType);
+                parameter.Value = value;
                 command.Parameters.Add(parameter);
             }
         }
 
-        private Tout MapReaderToEntity<Tout>(DbDataReader reader)
+        private static DbType GetDbType(Type propertyType)
+        {
+            switch (Type.GetTypeCode(propertyType))
+            {
+                case TypeCode.Boolean:
+                    return DbType.Boolean;
+                case TypeCode.Byte:
+                    return DbType.Byte;
+                case TypeCode.Char:
+                    return DbType.StringFixedLength;
+                case TypeCode.DateTime:
+                    return DbType.DateTime;
+                case TypeCode.Decimal:
+                    return DbType.Decimal;
+                case TypeCode.Double:
+                    return DbType.Double;
+                case TypeCode.Int16:
+                    return DbType.Int16;
+                case TypeCode.Int32:
+                    return DbType.Int32;
+                case TypeCode.Int64:
+                    return DbType.Int64;
+                case TypeCode.SByte:
+                    return DbType.SByte;
+                case TypeCode.Single:
+                    return DbType.Single;
+                case TypeCode.String:
+                    return DbType.String;
+                case TypeCode.UInt16:
+                    return DbType.UInt16;
+                case TypeCode.UInt32:
+                    return DbType.UInt32;
+                case TypeCode.UInt64:
+                    return DbType.UInt64;
+                default:
+                    if (propertyType == typeof(byte[]))
+                    {
+                        return DbType.Binary;
+                    }
+                    else if (propertyType == typeof(Guid))
+                    {
+                        return DbType.Guid;
+                    }
+                    else if (propertyType == typeof(DateTimeOffset))
+                    {
+                        return DbType.DateTimeOffset;
+                    }
+                    else if (propertyType == typeof(SqlXml))
+                    {
+                        return DbType.Xml;
+                    }
+                    else
+                    {
+                        return DbType.Object;
+                    }
+            }
+        }
+
+        private static Tout MapReaderToEntity<Tout>(DbDataReader reader)
         {
             var entity = Activator.CreateInstance<Tout>();
             var properties = typeof(Tout).GetProperties();
@@ -232,7 +294,7 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             command.CommandText = query;
             command.CommandType = commandType;
             command.Transaction = _transaction;
-            AddParameters<Tin>(command, parameters);
+            AddParameters(command, parameters);
 
             if (_transaction is null)
             {

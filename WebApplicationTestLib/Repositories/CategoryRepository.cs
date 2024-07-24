@@ -23,17 +23,12 @@ namespace WebApplicationTestLib.Repositories
 
         public async Task<Category> GetByIdAsync(int categoryId, CancellationToken cancellationToken)
         {
-                return await _sqlAdapter.FindOneAsync<Category, dynamic>(Queries.Category.GET,
-                                                                         new { categoryId },
-                                                                         CommandType.Text,
-                                                                         cancellationToken);
+            return await _sqlAdapter.FindOneAsync<Category, dynamic>(Queries.Category.GET, new { categoryId }, CommandType.Text, cancellationToken);
         }
+
         public async Task<IEnumerable<Category>> GetAsync(CancellationToken cancellationToken)
         {
-            return await _sqlAdapter.FindAsync<Category, dynamic>(Queries.Category.GETALL,
-                                                                  new { },
-                                                                  CommandType.Text,
-                                                                  cancellationToken);
+            return await _sqlAdapter.FindAsync<Category, dynamic>(Queries.Category.GETALL, new { }, CommandType.Text, cancellationToken);
         }
 
         public async Task CreateAsync(Category category, CancellationToken cancellationToken)
@@ -42,14 +37,38 @@ namespace WebApplicationTestLib.Repositories
             {
                 await _sqlAdapter.BeginTransactionAsync(cancellationToken);
                 await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.CREATE,
-                                                       new
-                                                       {
-                                                           categoryName = category.CategoryName,
-                                                           description = category.Description,
-                                                           picture = category.Picture
-                                                       },
-                                                       CommandType.Text,
-                                                       cancellationToken);
+                                                     new
+                                                     {
+                                                         categoryName = category.CategoryName,
+                                                         description = category.Description,
+                                                         picture = category.Picture
+                                                     },
+                                                     CommandType.Text,
+                                                     cancellationToken);
+                await _sqlAdapter.CommitTransactionAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                await _sqlAdapter.RollbackTransactionAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        public async Task UpdateAsync(Category category, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _sqlAdapter.BeginTransactionAsync(cancellationToken);
+                await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.UPDATE,
+                                          new
+                                          {
+                                              categoryId = category.CategoryID,
+                                              categoryName = category.CategoryName,
+                                              description = category.Description,
+                                              picture = category.Picture
+                                          },
+                                          CommandType.Text,
+                                          cancellationToken);
                 await _sqlAdapter.CommitTransactionAsync(cancellationToken);
             }
             catch (Exception)
@@ -58,29 +77,24 @@ namespace WebApplicationTestLib.Repositories
             }
         }
 
-        public Task UpdateAsync(Category category, CancellationToken cancellationToken)
+        public async Task DeleteAsync(int categoryId, CancellationToken cancellationToken)
         {
-            return _sqlAdapter.SaveAsync<dynamic>(Queries.Category.UPDATE,
-                                                  new
-                                                  {
-                                                      categoryId = category.CategoryID,
-                                                      categoryName = category.CategoryName,
-                                                      description = category.Description,
-                                                      picture = category.Picture
-                                                  },
-                                                  CommandType.Text,
-                                                  cancellationToken);
-        }
-
-        public Task DeleteAsync(int categoryId, CancellationToken cancellationToken)
-        {
-            return _sqlAdapter.SaveAsync<dynamic>(Queries.Category.DELETE,
-                                                  new
-                                                  {
-                                                      categoryId
-                                                  },
-                                                  CommandType.Text,
-                                                  cancellationToken);
+            try
+            {
+                await _sqlAdapter.BeginTransactionAsync(cancellationToken);
+                await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.DELETE,
+                                               new
+                                               {
+                                                   categoryId
+                                               },
+                                               CommandType.Text,
+                                               cancellationToken);
+                await _sqlAdapter.CommitTransactionAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                await _sqlAdapter.RollbackTransactionAsync(cancellationToken);
+            }
         }
     }
 }

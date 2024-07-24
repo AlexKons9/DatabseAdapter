@@ -8,7 +8,6 @@ using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.Common;
 using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
-using System.Threading;
 
 
 namespace DatabaseAdapter.DataHandlers.SqlAdapters

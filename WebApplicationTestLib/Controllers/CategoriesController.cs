@@ -61,7 +61,7 @@ namespace WebApplicationTestLib.Controllers
             try
             {
                 await _repository.CreateAsync(category, cancellationToken);
-                return CreatedAtAction(nameof(Get), new { id = category.CategoryID }, category);
+                return Ok();
             }
             catch (Exception ex)
             {
