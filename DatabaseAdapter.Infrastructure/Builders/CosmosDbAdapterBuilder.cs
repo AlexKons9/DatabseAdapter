@@ -1,5 +1,6 @@
 ﻿using DatabaseAdapter.DataHandlers.NoSqlAdapter;
 using DatabaseAdapter.Interfaces.Builders;
+using Microsoft.Azure.Cosmos;
 
 
 namespace DatabaseAdapter.Infrastructure.Factories
@@ -15,21 +16,27 @@ namespace DatabaseAdapter.Infrastructure.Factories
             _adapter = CosmosDbAdapter.Create();
         }
 
-        public ICosmosDbAdapterBuilder SetConnectionString(string connectionString)
+        public ICosmosDbAdapterBuilder SetConnectionString(string connectionString, CosmosClientOptions? options = null)
         {
-            _adapter.SetConnectionString(connectionString);
+            _adapter.SetConnectionString(connectionString, options);
             return this;
         }
 
-        public ICosmosDbAdapterBuilder SetDatabase(string database)
+        public ICosmosDbAdapterBuilder SetCredentialsForConnection(string accountEndpoint, string authKeyOrResourceToken, CosmosClientOptions? options = null)
         {
-            _adapter.SetDatabase(database);
+            _adapter.SetCredentialsForConnection(accountEndpoint, authKeyOrResourceToken, options);
             return this;
         }
 
-        public CosmosDbAdapter Build()
+        public async Task<ICosmosDbAdapterBuilder> SetDatabaseNameAsync(string database)
         {
-            return _adapter;
+            await _adapter.SetDatabaseName(database);
+            return this;
+        }
+
+        public Task<CosmosDbAdapter> BuildAsync()
+        {
+            return Task.FromResult(_adapter);
         }
 
     }

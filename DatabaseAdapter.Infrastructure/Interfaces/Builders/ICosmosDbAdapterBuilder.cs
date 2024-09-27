@@ -1,16 +1,13 @@
 ﻿using DatabaseAdapter.DataHandlers.NoSqlAdapter;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
 
 namespace DatabaseAdapter.Interfaces.Builders
 {
     public interface ICosmosDbAdapterBuilder
     {
-        public ICosmosDbAdapterBuilder SetConnectionString(string connectionString);
-        public ICosmosDbAdapterBuilder SetDatabase(string database);
-        public CosmosDbAdapter Build();
+        ICosmosDbAdapterBuilder SetConnectionString(string connectionString, CosmosClientOptions? options = null);
+        ICosmosDbAdapterBuilder SetCredentialsForConnection(string accountEndpoint, string authKeyOrResourceToken, CosmosClientOptions? options = null);
+        Task<ICosmosDbAdapterBuilder> SetDatabaseNameAsync(string database);
+        Task<CosmosDbAdapter> BuildAsync();
     }
 }

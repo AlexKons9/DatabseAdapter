@@ -1,10 +1,5 @@
 ﻿using DatabaseAdapter.DataHandlers.NoSqlAdapter;
 using DatabaseAdapter.Interfaces.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DatabaseAdapter.Builders
 {
@@ -25,9 +20,9 @@ namespace DatabaseAdapter.Builders
             return this;
         }
 
-        public IMongoDbAdapterBuilder SetDatabase(string databaseName)
+        public IMongoDbAdapterBuilder SetDatabaseName(string databaseName)
         {
-            _adapter.SetDatabase(databaseName);
+            _adapter.SetDatabaseName(databaseName);
             return this;
         }
 

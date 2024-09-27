@@ -5,11 +5,9 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
 using Npgsql;
-using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlTypes;
-using System.Xml.Serialization;
 
 namespace DatabaseAdapter.DataHandlers.SqlAdapters
 {
@@ -35,7 +33,6 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
                 DatabaseType.MySql => new MySqlConnection(connectionString),
                 DatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
                 DatabaseType.SQLite => new SqliteConnection(connectionString),
-                DatabaseType.Oracle => new OracleConnection(connectionString),
                 _ => throw new NotSupportedException($"Database type {_databaseType} is not supported.")
             };
         }
@@ -151,24 +148,13 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             command.Transaction = _transaction;
             AddParameters(command, parameters);
 
-            if (_transaction is null)
+            await _connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync())
             {
-                await _connection.OpenAsync();
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                while (await reader.ReadAsync())
-                {
-                    result.Add(MapReaderToEntity<Tout>(reader));
-                }
-                await _connection.CloseAsync();
+                result.Add(MapReaderToEntity<Tout>(reader));
             }
-            else
-            {
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                while (await reader.ReadAsync())
-                {
-                    result.Add(MapReaderToEntity<Tout>(reader));
-                }
-            }
+            await _connection.CloseAsync();
 
             return result;
         }
@@ -183,29 +169,15 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
             command.CommandType = commandType;
             command.Transaction = _transaction;
             AddParameters(command, parameters);
-
-            if (_transaction is null)
+            await _connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            Tout? result = default;
+            if (await reader.ReadAsync(cancellationToken))
             {
-                await _connection.OpenAsync();
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                await _connection.CloseAsync();
-                return result;
+                result = MapReaderToEntity<Tout>(reader);
             }
-            else
-            {
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                Tout? result = default;
-                if (await reader.ReadAsync(cancellationToken))
-                {
-                    result = MapReaderToEntity<Tout>(reader);
-                }
-                return result;
-            }
+            await _connection.CloseAsync();
+            return result;
         }
 
         public async Task<IEnumerable<Tout>> SaveAndFindAsync<Tout, Tin>(string query,

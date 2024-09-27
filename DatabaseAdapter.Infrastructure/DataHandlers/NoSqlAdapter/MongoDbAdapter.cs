@@ -1,5 +1,5 @@
 ﻿using MongoDB.Driver;
-
+using System.Collections;
 
 namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
 {
@@ -20,7 +20,7 @@ namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
             MongoClient = new MongoClient(connectionString);
         }
 
-        public void SetDatabase(string databaseName)
+        public void SetDatabaseName(string databaseName)
         {
             Database = MongoClient.GetDatabase(databaseName);
         }

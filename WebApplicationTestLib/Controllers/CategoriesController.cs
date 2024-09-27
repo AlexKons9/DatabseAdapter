@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplicationTestLib.Entities;
-using WebApplicationTestLib.Repositories;
 
 namespace WebApplicationTestLib.Controllers
 {
@@ -34,7 +33,7 @@ namespace WebApplicationTestLib.Controllers
 
         // GET api/categories/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
+        public async Task<IActionResult> Get(string id, CancellationToken cancellationToken)
         {
             try
             {
@@ -73,11 +72,11 @@ namespace WebApplicationTestLib.Controllers
 
         // PUT api/categories/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] Category category, CancellationToken cancellationToken)
+        public async Task<IActionResult> Put(string id, [FromBody] Category category, CancellationToken cancellationToken)
         {
             try
             {
-                category.CategoryID = id;  // Ensure the ID in the URL matches the entity's ID
+                category.Id = id;  // Ensure the ID in the URL matches the entity's ID
                 await _repository.UpdateAsync(category, cancellationToken);
                 return Ok();
             }
@@ -91,7 +90,7 @@ namespace WebApplicationTestLib.Controllers
 
         // DELETE api/categories/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
         {
             try
             {

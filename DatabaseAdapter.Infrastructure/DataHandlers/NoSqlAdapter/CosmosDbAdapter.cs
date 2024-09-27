@@ -4,25 +4,30 @@ namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
 {
     public class CosmosDbAdapter
     {
-        public Database? Database { get; private set; }
-        public CosmosClient? Client { get; private set; }
+        public Database Database { get; private set; }
+        public CosmosClient Client { get; private set; }
 
 
         private CosmosDbAdapter() { }
 
         public static CosmosDbAdapter Create()
         {
-            return new CosmosDbAdapter(); 
+            return new CosmosDbAdapter();
         }
 
-        public void SetConnectionString (string connectionString)
+        public void SetConnectionString(string connectionString, CosmosClientOptions? options = null)
         {
-            Client = new CosmosClient(connectionString);
+            Client = new CosmosClient(connectionString, options);
         }
 
-        public Database SetDatabase(string databaseName)
+        public void SetCredentialsForConnection(string accountEndpoint, string authKeyOrResourceToken, CosmosClientOptions? options = null)
         {
-            return Database = Client.GetDatabase(databaseName); ;
+            Client = new CosmosClient(accountEndpoint, authKeyOrResourceToken, options);
+        }
+
+        public async Task SetDatabaseName(string databaseName)
+        {
+            Database = await Client.CreateDatabaseIfNotExistsAsync(databaseName);
         }
 
     }

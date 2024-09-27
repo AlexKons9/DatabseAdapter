@@ -1,5 +1,4 @@
 ﻿using WebApplicationTestLib.Options;
-using WebApplicationTestLib.Repositories;
 
 namespace WebApplicationTestLib.Extensions
 {

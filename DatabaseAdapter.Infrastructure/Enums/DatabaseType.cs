@@ -7,7 +7,6 @@ namespace DatabaseAdapter.Domain.Enums
         MySql,
         MariaDB,
         PostgreSql,
-        SQLite,
-        Oracle
+        SQLite
     }
 }

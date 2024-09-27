@@ -1,100 +1,93 @@
-﻿using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
-using DatabaseAdapter.Infrastructure.Factories;
-using Microsoft.Extensions.Options;
-using System.Data;
+﻿using DatabaseAdapter.Builders;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using WebApplicationTestLib.Entities;
-using WebApplicationTestLib.Options;
 
-namespace WebApplicationTestLib.Repositories
+
+public class CategoryRepository
 {
-    public class CategoryRepository
+    private const string databaseName = "newdb";
+    private const string connectionString = "mongodb://root:example@localhost:27017"; // MongoDB connection string
+    private readonly IMongoCollection<Category> _categoryCollection;
+
+    public CategoryRepository()
     {
-        private readonly ISqlAdapter _sqlAdapter;
+        // Build the MongoDB adapter using the builder pattern
+        var dbAdapter = new MongoDbAdapterBuilder()
+            .SetConnectionString(connectionString)
+            .SetDatabaseName(databaseName)
+            .Build();
 
-        public CategoryRepository(IOptions<DatabaseOptions> options)
+        // Ensure that the Category collection exists
+        _categoryCollection = dbAdapter.Database.GetCollection<Category>("Category");
+    }
+
+    public async Task<Category> GetByIdAsync(string categoryId, CancellationToken cancellationToken)
+    {
+        try
         {
-            var optionsBuilder = options.Value;
-            _sqlAdapter = new SqlAdapterBuilder()
-                .SetConnectionString(optionsBuilder.ConnectionString)
-                .SetDatabaseType(optionsBuilder.DatabaseType)
-                .SetDataServiceHandlerType(optionsBuilder.DataServiceHandlerType)
-                .BuildAdapter();
+            var filter = Builders<Category>.Filter.Eq(c => c.Id, categoryId);
+            return await _categoryCollection.Find(filter).FirstOrDefaultAsync(cancellationToken);
         }
-
-        public async Task<Category> GetByIdAsync(int categoryId, CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            return await _sqlAdapter.FindOneAsync<Category, dynamic>(Queries.Category.GET, new { categoryId }, CommandType.Text, cancellationToken);
+            // Log or handle other exceptions
+            throw new Exception($"An error occurred while retrieving the category: {ex.Message}", ex);
         }
+    }
 
-        public async Task<IEnumerable<Category>> GetAsync(CancellationToken cancellationToken)
+    public async Task<IEnumerable<Category>> GetAsync(CancellationToken cancellationToken)
+    {
+        try
         {
-            return await _sqlAdapter.FindAsync<Category, dynamic>(Queries.Category.GETALL, new { }, CommandType.Text, cancellationToken);
+            return await _categoryCollection.Find(new BsonDocument()).ToListAsync(cancellationToken);
         }
-
-        public async Task CreateAsync(Category category, CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            try
-            {
-                await _sqlAdapter.BeginTransactionAsync(cancellationToken);
-                await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.CREATE,
-                                                     new
-                                                     {
-                                                         categoryName = category.CategoryName,
-                                                         description = category.Description,
-                                                         picture = category.Picture
-                                                     },
-                                                     CommandType.Text,
-                                                     cancellationToken);
-                await _sqlAdapter.CommitTransactionAsync(cancellationToken);
-            }
-            catch (Exception)
-            {
-                await _sqlAdapter.RollbackTransactionAsync(cancellationToken);
-                throw;
-            }
+            // Log or handle other exceptions
+            throw new Exception($"An error occurred while retrieving categories: {ex.Message}", ex);
         }
+    }
 
-        public async Task UpdateAsync(Category category, CancellationToken cancellationToken)
+    public async Task CreateAsync(Category category, CancellationToken cancellationToken)
+    {
+        try
         {
-            try
-            {
-                await _sqlAdapter.BeginTransactionAsync(cancellationToken);
-                await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.UPDATE,
-                                          new
-                                          {
-                                              categoryId = category.CategoryID,
-                                              categoryName = category.CategoryName,
-                                              description = category.Description,
-                                              picture = category.Picture
-                                          },
-                                          CommandType.Text,
-                                          cancellationToken);
-                await _sqlAdapter.CommitTransactionAsync(cancellationToken);
-            }
-            catch (Exception)
-            {
-                await _sqlAdapter.RollbackTransactionAsync(cancellationToken);
-            }
+            category.Id = Guid.NewGuid().ToString(); // Set the ID
+            await _categoryCollection.InsertOneAsync(category, null, cancellationToken);
         }
-
-        public async Task DeleteAsync(int categoryId, CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            try
-            {
-                await _sqlAdapter.BeginTransactionAsync(cancellationToken);
-                await _sqlAdapter.SaveAsync<dynamic>(Queries.Category.DELETE,
-                                               new
-                                               {
-                                                   categoryId
-                                               },
-                                               CommandType.Text,
-                                               cancellationToken);
-                await _sqlAdapter.CommitTransactionAsync(cancellationToken);
-            }
-            catch (Exception)
-            {
-                await _sqlAdapter.RollbackTransactionAsync(cancellationToken);
-            }
+            // Log or handle exceptions
+            throw new Exception($"An error occurred while creating the category: {ex.Message}", ex);
+        }
+    }
+
+    public async Task UpdateAsync(Category category, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var filter = Builders<Category>.Filter.Eq(c => c.Id, category.Id);
+            await _categoryCollection.ReplaceOneAsync(filter, category, cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Log or handle exceptions
+            throw new Exception($"An error occurred while updating the category: {ex.Message}", ex);
+        }
+    }
+
+    public async Task DeleteAsync(string categoryId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var filter = Builders<Category>.Filter.Eq(c => c.Id, categoryId);
+            await _categoryCollection.DeleteOneAsync(filter, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Log or handle exceptions
+            throw new Exception($"An error occurred while deleting the category: {ex.Message}", ex);
         }
     }
 }

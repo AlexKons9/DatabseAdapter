@@ -4,7 +4,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
 using Npgsql;
-using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.Common;
 using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
@@ -35,7 +34,6 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
                 DatabaseType.MySql => new MySqlConnection(connectionString),
                 DatabaseType.PostgreSql => new NpgsqlConnection(connectionString),
                 DatabaseType.SQLite => new SqliteConnection(connectionString),
-                DatabaseType.Oracle => new OracleConnection(connectionString),
                 _ => throw new NotSupportedException($"Database type {databaseType} is not supported.")
             };
         }
@@ -49,14 +47,10 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
                                                                   CommandType commandType,
                                                                   CancellationToken cancellationToken = default)
         {
-            if (_transaction is null)
-            {
-                await _connection.OpenAsync(cancellationToken);
-                var result = await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
-                await _connection.CloseAsync();
-                return result;
-            }
-            return await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
+            await _connection.OpenAsync(cancellationToken);
+            var result = await _connection.QueryAsync<Tout>(query, parameters, commandType: commandType);
+            await _connection.CloseAsync();
+            return result;
         }
 
         public async Task<Tout?> FindOneAsync<Tout, Tin>(string query,
@@ -64,14 +58,10 @@ namespace DatabaseAdapter.DataHandlers.SqlAdapters
                                                          CommandType commandType,
                                                          CancellationToken cancellationToken = default)
         {
-            if (_transaction is null) 
-            {
-                await _connection.OpenAsync(cancellationToken);
-                var result = await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
-                await _connection.CloseAsync();
-                return result;
-            }
-            return await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
+            await _connection.OpenAsync(cancellationToken);
+            var result = await _connection.QueryFirstOrDefaultAsync<Tout>(query, parameters, commandType: commandType);
+            await _connection.CloseAsync();
+            return result;
         }
 
         public async Task<IEnumerable<Tout>> SaveAndFindAsync<Tout, Tin>(string query,

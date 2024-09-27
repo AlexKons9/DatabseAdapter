@@ -28,11 +28,7 @@ namespace DatabaseAdapter.Infrastructure.Factories
 
             // SQLite
             {(DatabaseType.SQLite, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.SQLite, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
-
-            // Oracle
-            {(DatabaseType.Oracle, DataServiceHandlerType.Dapper), typeof(DapperAdapter)},
-            {(DatabaseType.Oracle, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)},
+            {(DatabaseType.SQLite, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)}
         };
 
         public ISqlAdapterBuilder SetConnectionString(string connectionString)
