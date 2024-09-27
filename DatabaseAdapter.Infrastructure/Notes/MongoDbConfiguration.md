@@ -140,21 +140,6 @@ services:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
 ```
 
-### Sample Initialization Script (`init-mongo.js`)
-
-```js
-db.createUser({
-  user: "myUser",
-  pwd: "myPassword",
-  roles: [{ role: "readWrite", db: "myDatabase" }]
-});
-
-db.createCollection("myCollection");
-```
-
-The above script creates a user, a new database, and a collection when the MongoDB container starts.
-
----
 
 ## 5. Configuration Tips
 
