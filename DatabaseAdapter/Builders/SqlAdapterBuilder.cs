@@ -1,11 +1,10 @@
 ﻿using DatabaseAdapter.DataHandlers.SqlAdapters;
 using DatabaseAdapter.Domain.Enums;
-using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
-using DatabaseAdapter.Interfaces.Builders;
+using DatabaseAdapter.Interfaces;
 
 namespace DatabaseAdapter.Infrastructure.Factories
 {
-    public class SqlAdapterBuilder : ISqlAdapterBuilder
+    public class SqlAdapterBuilder
     {
         private string? _connectionString;
         private DatabaseType _databaseType;
@@ -31,19 +30,19 @@ namespace DatabaseAdapter.Infrastructure.Factories
             {(DatabaseType.SQLite, DataServiceHandlerType.AdoNet), typeof(AdoNetAdapter)}
         };
 
-        public ISqlAdapterBuilder SetConnectionString(string connectionString)
+        public SqlAdapterBuilder SetConnectionString(string connectionString)
         {
             _connectionString = connectionString;
             return this;
         }
 
-        public ISqlAdapterBuilder SetDatabaseType(DatabaseType databaseType)
+        public SqlAdapterBuilder SetDatabaseType(DatabaseType databaseType)
         {
             _databaseType = databaseType;
             return this;
         }
 
-        public ISqlAdapterBuilder SetDataServiceHandlerType(DataServiceHandlerType dataServiceHandlerType)
+        public SqlAdapterBuilder SetDataServiceHandlerType(DataServiceHandlerType dataServiceHandlerType)
         {
             _dataServiceHandlerType = dataServiceHandlerType;
             return this;

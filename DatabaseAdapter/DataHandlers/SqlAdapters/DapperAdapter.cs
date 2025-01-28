@@ -6,7 +6,7 @@ using MySqlConnector;
 using Npgsql;
 using System.Data;
 using System.Data.Common;
-using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
+using DatabaseAdapter.Interfaces;
 
 
 namespace DatabaseAdapter.DataHandlers.SqlAdapters

@@ -1,9 +1,8 @@
 ﻿using DatabaseAdapter.DataHandlers.NoSqlAdapter;
-using DatabaseAdapter.Interfaces.Builders;
 
 namespace DatabaseAdapter.Builders
 {
-    public class MongoDbAdapterBuilder : IMongoDbAdapterBuilder
+    public class MongoDbAdapterBuilder
     {
         private string? _connectionString;
         private string? _database;
@@ -14,13 +13,13 @@ namespace DatabaseAdapter.Builders
             _adapter = MongoDbAdapter.Create();
         }
 
-        public IMongoDbAdapterBuilder SetConnectionString(string connectionString)
+        public MongoDbAdapterBuilder SetConnectionString(string connectionString)
         {
             _adapter.SetConnectionString(connectionString);
             return this;
         }
 
-        public IMongoDbAdapterBuilder SetDatabaseName(string databaseName)
+        public MongoDbAdapterBuilder SetDatabaseName(string databaseName)
         {
             _adapter.SetDatabaseName(databaseName);
             return this;

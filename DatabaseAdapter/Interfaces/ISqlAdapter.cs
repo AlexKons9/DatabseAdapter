@@ -1,6 +1,6 @@
 ﻿using System.Data;
 
-namespace DatabaseAdapter.Domain.Interfaces.SqlAdapters
+namespace DatabaseAdapter.Interfaces
 {
     public interface ISqlAdapter
     {

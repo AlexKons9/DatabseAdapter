@@ -1,6 +1,6 @@
 ﻿using DatabaseAdapter.Domain.Enums;
-using DatabaseAdapter.Domain.Interfaces.SqlAdapters;
 using DatabaseAdapter.Infrastructure.Extensions;
+using DatabaseAdapter.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
