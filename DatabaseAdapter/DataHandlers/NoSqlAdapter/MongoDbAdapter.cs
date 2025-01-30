@@ -1,5 +1,4 @@
 ﻿using MongoDB.Driver;
-using System.Collections;
 
 namespace DatabaseAdapter.DataHandlers.NoSqlAdapter
 {
